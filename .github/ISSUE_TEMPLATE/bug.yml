@@ -1,0 +1,20 @@
+name: Bug report
+description: Report incorrect detection or unsafe value handling
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes: { value: Never post actual environment values or private configuration. }
+  - type: input
+    id: version
+    attributes: { label: Version and Python version }
+    validations: { required: true }
+  - type: textarea
+    id: reproduction
+    attributes: { label: Sanitized reproduction }
+    validations: { required: true }
+  - type: textarea
+    id: expected
+    attributes: { label: Expected classification }
+    validations: { required: true }
+
