@@ -78,15 +78,6 @@ PATTERNS: dict[str, list[tuple[str, re.Pattern[str]]]] = {
     ],
 }
 
-LEGACY_DYNAMIC_PATTERNS: dict[str, list[re.Pattern[str]]] = {
-    "python": [
-        re.compile(r"\bos\.(?:getenv|environ\.get)\s*\(\s*(?!['\"])"),
-        re.compile(r"\bos\.environ\s*\[\s*(?!['\"])"),
-    ],
-    "javascript": [re.compile(r"\bprocess\.env\s*\[\s*(?!['\"])")],
-    "php": [re.compile(r"\b(?:env|getenv)\s*\(\s*(?!['\"])")],
-}
-
 DYNAMIC_PATTERNS: dict[str, list[tuple[str, re.Pattern[str]]]] = {
     "python": [
         (
