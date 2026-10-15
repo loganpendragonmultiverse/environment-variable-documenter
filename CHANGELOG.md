@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.1 - 2026-10-15
+
+- Correct current README release status and wheel-install links after the Python alias detection release.
+
 ## 1.1.0 - 2026-10-15
 
 - Recognize direct Python os/getenv/environ aliases using syntax trees, conservatively reject shadowed bindings, and retain value-free dynamic review items.

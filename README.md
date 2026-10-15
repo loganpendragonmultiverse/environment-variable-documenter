@@ -4,14 +4,14 @@ Environment Variable Documenter is a read-only command-line tool that finds envi
 
 It inventories names and source locations. It deliberately does **not** read real `.env` values.
 
-**Release status:** 1.0.0, feature-complete initial CLI release.
+**Release status:** 1.1.1, with syntax-tree detection of direct Python environment aliases.
 
 ## Three-minute start
 
-Download and install the wheel from the [v1.0.0 release](https://github.com/loganpendragonmultiverse/environment-variable-documenter/releases/tag/v1.0.0):
+Download and install the wheel from the [v1.1.1 release](https://github.com/loganpendragonmultiverse/environment-variable-documenter/releases/tag/v1.1.1):
 
 ```console
-python -m pip install "environment-variable-documenter @ https://github.com/loganpendragonmultiverse/environment-variable-documenter/releases/download/v1.0.0/environment_variable_documenter-1.0.0-py3-none-any.whl"
+python -m pip install "environment-variable-documenter @ https://github.com/loganpendragonmultiverse/environment-variable-documenter/releases/download/v1.1.1/environment_variable_documenter-1.1.1-py3-none-any.whl"
 env-documenter . --markdown environment-variables.md --example .env.example --json environment-variables.json
 ```
 
