@@ -155,11 +155,13 @@ class _Accesses(ast.NodeVisitor):
         records: dict[str, VariableRecord],
         dynamic: list[Occurrence],
         aliases: dict[str, Binding],
+        lexical_aliases: dict[str, Binding] | None = None,
     ) -> None:
         self.path = path
         self.records = records
         self.dynamic = dynamic
         self.aliases = aliases
+        self.lexical_aliases = aliases if lexical_aliases is None else lexical_aliases
 
     def _kind(self, node: ast.expr) -> str | None:
         if isinstance(node, ast.Name):
@@ -208,7 +210,7 @@ class _Accesses(ast.NodeVisitor):
             *[item for item in node.args.kw_defaults if item],
         ]:
             self.visit(expression)
-        aliases = _scope(node.body, self.aliases, node.args)
+        aliases = _scope(node.body, self.lexical_aliases, node.args)
         child = _Accesses(self.path, self.records, self.dynamic, aliases)
         for statement in node.body:
             child.visit(statement)
@@ -221,7 +223,10 @@ class _Accesses(ast.NodeVisitor):
         ]:
             self.visit(expression)
         child = _Accesses(
-            self.path, self.records, self.dynamic, _scope(node.body, self.aliases, node.args)
+            self.path,
+            self.records,
+            self.dynamic,
+            _scope(node.body, self.lexical_aliases, node.args),
         )
         for statement in node.body:
             child.visit(statement)
@@ -229,7 +234,7 @@ class _Accesses(ast.NodeVisitor):
     def visit_Lambda(self, node: ast.Lambda) -> None:
         for expression in [*node.args.defaults, *[item for item in node.args.kw_defaults if item]]:
             self.visit(expression)
-        aliases = _scope([ast.Expr(value=node.body)], self.aliases, node.args)
+        aliases = _scope([ast.Expr(value=node.body)], self.lexical_aliases, node.args)
         _Accesses(self.path, self.records, self.dynamic, aliases).visit(node.body)
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
@@ -239,22 +244,40 @@ class _Accesses(ast.NodeVisitor):
             *[item.value for item in node.keywords],
         ]:
             self.visit(expression)
-        child = _Accesses(self.path, self.records, self.dynamic, _scope(node.body, self.aliases))
+        # Definition-time expressions use the class namespace. Function/lambda
+        # bodies and nested class bodies do not close over that namespace.
+        child = _Accesses(
+            self.path,
+            self.records,
+            self.dynamic,
+            _scope(node.body, self.lexical_aliases),
+            self.lexical_aliases,
+        )
         for statement in node.body:
-            # Methods close over the enclosing lexical scope, not the class namespace.
-            if isinstance(statement, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-                self.visit(statement)
-            else:
-                child.visit(statement)
+            child.visit(statement)
 
-    def _comprehension(self, node: ast.AST) -> None:
-        aliases = dict(self.aliases)
-        for item in ast.walk(node):
-            if isinstance(item, ast.Name) and isinstance(item.ctx, ast.Store):
-                aliases.pop(item.id, None)
+    def _comprehension(
+        self, node: ast.ListComp | ast.SetComp | ast.DictComp | ast.GeneratorExp
+    ) -> None:
+        aliases = dict(self.lexical_aliases)
+        for generator in node.generators:
+            for item in ast.walk(generator.target):
+                if isinstance(item, ast.Name) and isinstance(item.ctx, ast.Store):
+                    aliases.pop(item.id, None)
         child = _Accesses(self.path, self.records, self.dynamic, aliases)
-        for item in ast.iter_child_nodes(node):
-            child.visit(item)
+        # Python evaluates the first iterable in the surrounding namespace;
+        # the remaining comprehension runs in its own lexical scope.
+        self.visit(node.generators[0].iter)
+        for index, generator in enumerate(node.generators):
+            if index:
+                child.visit(generator.iter)
+            for condition in generator.ifs:
+                child.visit(condition)
+        if isinstance(node, ast.DictComp):
+            child.visit(node.key)
+            child.visit(node.value)
+        else:
+            child.visit(node.elt)
 
     def visit_ListComp(self, node: ast.ListComp) -> None:
         self._comprehension(node)
@@ -272,13 +295,27 @@ class _Accesses(ast.NodeVisitor):
 def read_python(
     text: str, path: str, records: dict[str, VariableRecord], dynamic: list[Occurrence]
 ) -> None:
+    staged_records: dict[str, VariableRecord] = {}
+    staged_dynamic: list[Occurrence] = []
     try:
         tree = ast.parse(text)
+        aliases = _scope(tree.body, {"os": ("os", 0)})
+        visitor = _Accesses(path, staged_records, staged_dynamic, aliases)
+        visitor.visit(tree)
     except (SyntaxError, ValueError, RecursionError):
         dynamic.append(
-            Occurrence(path, 1, "unparsed Python source (syntax unsupported or invalid)")
+            Occurrence(
+                path,
+                1,
+                "unparsed Python source (syntax unsupported, invalid, or too deeply nested)",
+            )
         )
         return
-    aliases = _scope(tree.body, {"os": ("os", 0)})
-    visitor = _Accesses(path, records, dynamic, aliases)
-    visitor.visit(tree)
+    for name, record in staged_records.items():
+        existing = records.setdefault(name, record)
+        for occurrence in record.occurrences:
+            if occurrence not in existing.occurrences:
+                existing.occurrences.append(occurrence)
+    for occurrence in staged_dynamic:
+        if occurrence not in dynamic:
+            dynamic.append(occurrence)

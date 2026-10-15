@@ -215,3 +215,74 @@ def outer():
 """,
     )
     assert set(report.variables) == {"OUTER"}
+
+
+def test_class_local_aliases_in_method_defaults_and_decorators(tmp_path: Path) -> None:
+    report = inventory(
+        tmp_path,
+        """
+class Config:
+    from os import getenv as setting, environ as environment
+    @decorate(setting("DECORATOR"))
+    def method(self, value=setting("DEFAULT"), *, region=environment.get("REGION")):
+        return setting("NOT_IN_METHOD_SCOPE")
+    async def async_method(self, value=setting("ASYNC_DEFAULT")):
+        return value
+""",
+    )
+    assert set(report.variables) == {"DECORATOR", "DEFAULT", "REGION", "ASYNC_DEFAULT"}
+
+
+def test_class_shadowing_applies_to_defaults_but_not_method_bodies(tmp_path: Path) -> None:
+    report = inventory(
+        tmp_path,
+        """
+import os as setting
+class Config:
+    setting = object()
+    def method(self, value=setting.getenv("NOT_ENV")):
+        return setting.getenv("METHOD_BODY")
+""",
+    )
+    assert set(report.variables) == {"METHOD_BODY"}
+
+
+def test_nested_class_bases_use_outer_class_namespace(tmp_path: Path) -> None:
+    report = inventory(
+        tmp_path,
+        """
+class Outer:
+    from os import getenv as setting
+    @decorate(setting("CLASS_DECORATOR"))
+    class Nested(factory(setting("BASE"))):
+        def method(self):
+            return setting("NOT_A_CLOSURE")
+""",
+    )
+    assert set(report.variables) == {"CLASS_DECORATOR", "BASE"}
+
+
+def test_deep_valid_ast_becomes_review_and_scan_continues(tmp_path: Path) -> None:
+    import ast
+
+    source = 'import os\nos.getenv("PARTIAL")\ntotal = ' + " + ".join(["1"] * 600)
+    assert isinstance(ast.parse(source), ast.Module)
+    (tmp_path / "z_valid.py").write_text('os.getenv("STILL_SCANNED")', encoding="utf-8")
+    report = inventory(tmp_path, source)
+    assert set(report.variables) == {"STILL_SCANNED"}
+    assert len(report.dynamic_accesses) == 1
+    assert report.dynamic_accesses[0].syntax.startswith("unparsed Python")
+    assert "PARTIAL" not in str(report.to_dict())
+
+
+def test_class_lambda_and_comprehension_definition_scopes(tmp_path: Path) -> None:
+    report = inventory(
+        tmp_path,
+        """
+class Config:
+    from os import getenv as setting
+    factory = lambda value=setting("LAMBDA_DEFAULT"): setting("NOT_LAMBDA_CLOSURE")
+    values = {item: setting("NOT_COMPREHENSION_CLOSURE") for item in setting("ITERABLE")}
+""",
+    )
+    assert set(report.variables) == {"LAMBDA_DEFAULT", "ITERABLE"}

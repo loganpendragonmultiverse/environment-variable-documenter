@@ -40,11 +40,15 @@ ordinary string examples are not treated as Python accesses. Existing unimported
 Recognition is deliberately conservative: assignments, parameters, deletion,
 attribute replacement, competing imports, star imports and conditional imports
 can make a binding ambiguous. Such aliases are not guessed, even if a particular
-runtime path would work. Function scopes and class-method lexical lookup are
-handled separately. Assignment-derived aliases, arbitrary wrappers, monkeypatching
+runtime path would work. Definition-time expressions such as method defaults,
+decorators and nested-class bases use the surrounding class namespace. Method,
+lambda and comprehension bodies use their enclosing lexical scope instead;
+class-local aliases do not become closures. The first comprehension iterable
+uses the surrounding namespace. Assignment-derived aliases, arbitrary wrappers, monkeypatching
 and runtime import resolution remain outside scope. Invalid or interpreter-newer
-Python syntax produces a value-free review item instead of falling back to regex
-matches. Use an interpreter that supports the scanned source's syntax.
+Python syntax, or a syntax tree too deep for safe traversal, produces a
+value-free review item instead of falling back to regex matches. Partial
+occurrences from an unparsed file are discarded and other files still scan. Use an interpreter that supports the scanned source's syntax.
 
 Real dotenv files and excluded directories remain filtered **before** source
 reads. Template assignment values remain excluded from the report model.
