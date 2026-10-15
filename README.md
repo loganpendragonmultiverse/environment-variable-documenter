@@ -79,7 +79,7 @@ MIT License. Copyright 2026 Logan Pendragon Multiverse.
 
 This project is part of the [Logan Pendragon Forge open-source collection](https://www.loganpendragonforge.com/open-source/). Browse the catalog for other released tools, source repositories, live demos, and downloads.
 
-## Python aliases (1.1.0 source candidate)
+## Python aliases (1.1.0)
 
 Python source is parsed with the standard-library syntax tree; scanned modules
 are never imported or executed. These direct imports are recognized:
