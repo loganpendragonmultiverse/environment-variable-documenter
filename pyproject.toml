@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "environment-variable-documenter"
-version = "1.1.0"
+version = "1.1.1"
 description = "Read-only environment-variable usage inventory and redacted documentation generator."
 readme = "README.md"
 requires-python = ">=3.10"
