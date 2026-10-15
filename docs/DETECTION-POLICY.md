@@ -17,7 +17,7 @@ Files matching real dotenv conventions are skipped before `read_text`. In templa
 New patterns need positive, negative, multiline, quoting, dynamic-name, alias, generated-directory, file-size, and value-redaction tests. Avoid broad patterns that interpret ordinary uppercase identifiers as environment variables.
 
 
-## Python aliases (1.1.0 source candidate)
+## Python aliases (1.1.0)
 
 Python source is parsed with the standard-library syntax tree; scanned modules
 are never imported or executed. These direct imports are recognized:
