@@ -18,3 +18,9 @@ python -m pip_audit
 
 Do not add automatic reads of real dotenv files, secret values, deployment credentials, or network services.
 
+
+## 1.1.0 candidate
+
+Recognize direct Python os/getenv/environ aliases using syntax trees, conservatively reject shadowed bindings, and retain value-free dynamic review items.
+
+Run the existing project gates before review. This source candidate is not published.
