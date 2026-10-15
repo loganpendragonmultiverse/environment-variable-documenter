@@ -57,11 +57,6 @@ SENSITIVE_WORDS = (
 )
 
 PATTERNS: dict[str, list[tuple[str, re.Pattern[str]]]] = {
-    "python": [
-        ("os.environ", re.compile(r"\bos\.environ\s*\[\s*['\"]([A-Z][A-Z0-9_]*)['\"]\s*\]")),
-        ("os.environ.get", re.compile(r"\bos\.environ\.get\s*\(\s*['\"]([A-Z][A-Z0-9_]*)['\"]")),
-        ("os.getenv", re.compile(r"\bos\.getenv\s*\(\s*['\"]([A-Z][A-Z0-9_]*)['\"]")),
-    ],
     "javascript": [
         ("process.env", re.compile(r"\bprocess\.env\.([A-Z][A-Z0-9_]*)\b")),
         ("process.env[]", re.compile(r"\bprocess\.env\s*\[\s*['\"]([A-Z][A-Z0-9_]*)['\"]\s*\]")),
@@ -79,16 +74,6 @@ PATTERNS: dict[str, list[tuple[str, re.Pattern[str]]]] = {
 }
 
 DYNAMIC_PATTERNS: dict[str, list[tuple[str, re.Pattern[str]]]] = {
-    "python": [
-        (
-            "dynamic Python function access",
-            re.compile(r"\bos\.(?:getenv|environ\.get)\s*\(\s*(?!['\"])"),
-        ),
-        (
-            "dynamic Python mapping access",
-            re.compile(r"\bos\.environ\s*\[\s*(?!['\"])"),
-        ),
-    ],
     "javascript": [
         (
             "dynamic JavaScript mapping access",
@@ -162,6 +147,11 @@ def _read_source(
     records: dict[str, VariableRecord],
     dynamic: list[Occurrence],
 ) -> None:
+    if language == "python":
+        from .python_source import read_python
+
+        read_python(text, path, records, dynamic)
+        return
     for line_number, line in enumerate(text.splitlines(), start=1):
         for syntax, pattern in PATTERNS[language]:
             for match in pattern.finditer(line):

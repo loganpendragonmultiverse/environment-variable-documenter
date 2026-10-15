@@ -49,7 +49,7 @@ Without output flags, the Markdown inventory is printed. Exit code `1` represent
 ## Limitations
 
 - Static patterns cannot resolve names assembled at runtime.
-- Aliased imports, framework wrappers, indirect configuration objects, container manifests, and every language syntax are not covered in 1.0.0.
+- Framework wrappers, assignment-derived aliases, indirect configuration objects, container manifests, and every language syntax are not covered.
 - Shell detection is intentionally limited to uppercase names and can still report application-local shell variables.
 - “Sensitive” is a name-based warning, not proof of content or exposure.
 - The tool does not verify which variables are actually set in a deployment.
@@ -78,3 +78,35 @@ MIT License. Copyright 2026 Logan Pendragon Multiverse.
 ## More open-source projects
 
 This project is part of the [Logan Pendragon Forge open-source collection](https://www.loganpendragonforge.com/open-source/). Browse the catalog for other released tools, source repositories, live demos, and downloads.
+
+## Python aliases (1.1.0)
+
+Python source is parsed with the standard-library syntax tree; scanned modules
+are never imported or executed. These direct imports are recognized:
+
+```python
+import os as platform_os
+from os import getenv as setting, environ as settings
+
+platform_os.getenv("API_KEY")
+platform_os.environ["DATABASE_URL"]
+setting("REGION")
+settings.get("PORT")
+```
+
+Literal uppercase names and source locations are retained; default values and
+surrounding source text are not. Dynamic keys remain review items. Comments and
+ordinary string examples are not treated as Python accesses. Existing unimported
+`os.getenv` / `os.environ` recognition is retained when `os` is not shadowed.
+
+Recognition is deliberately conservative: assignments, parameters, deletion,
+attribute replacement, competing imports, star imports and conditional imports
+can make a binding ambiguous. Such aliases are not guessed, even if a particular
+runtime path would work. Function scopes and class-method lexical lookup are
+handled separately. Assignment-derived aliases, arbitrary wrappers, monkeypatching
+and runtime import resolution remain outside scope. Invalid or interpreter-newer
+Python syntax produces a value-free review item instead of falling back to regex
+matches. Use an interpreter that supports the scanned source's syntax.
+
+Real dotenv files and excluded directories remain filtered **before** source
+reads. Template assignment values remain excluded from the report model.
