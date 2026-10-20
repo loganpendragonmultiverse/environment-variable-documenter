@@ -1,6 +1,6 @@
 # Development handoff
 
-Version 1.1.1 is a read-only, name-only configuration inventory. The defining security rule is that value-bearing `.env` files are excluded before file reads. Example-template values are ignored rather than copied into reports.
+Version 1.1.2 is a read-only, name-only configuration inventory. The defining security rule is that value-bearing `.env` files are excluded before file reads. Example-template values are ignored rather than copied into reports.
 
 The initial language surface is Python, JavaScript/TypeScript, PHP, and shell plus dotenv templates. Expand it only with narrow syntax patterns, realistic fixtures, dynamic-access behavior, and false-positive tests.
 
@@ -23,4 +23,10 @@ Do not add automatic reads of real dotenv files, secret values, deployment crede
 
 Recognize direct Python os/getenv/environ aliases using syntax trees, conservatively reject shadowed bindings, and retain value-free dynamic review items.
 
-Validation: 45 regression tests pass on supported Python versions, with Ruff, strict types, package builds, dependency audit and the complete GitHub platform/CodeQL matrix. Independent review found no actionable findings. Keep the value-free dynamic review behavior and conservative shadowing boundaries; no real dotenv reads are added.
+Historical 1.1.1 validation: 45 regression tests passed on supported Python versions, with Ruff, strict types, package builds, dependency audit and the complete GitHub platform/CodeQL matrix. The 1.1.1 independent review found no actionable findings. Keep the value-free dynamic review behavior and conservative shadowing boundaries; no real dotenv reads are added.
+
+The 1.1.2 audit closes symlink reads, destination aliases, no-overwrite races and
+spurious dynamic findings caused by whitespace before literal JavaScript/PHP
+keys. Preserve name-only evidence and never read real dotenv values.
+
+Current 1.1.2 local acceptance: all 56 tests pass against source, an installed wheel, and an installed source distribution. Ruff, strict types, builds, and the dependency audit pass. Independent review, the remote platform matrix, and release verification remain pending at this candidate stage.

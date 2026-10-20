@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.2 - 2026-10-20
+
+- Avoid symlink scan reads and enforce the source size limit while reading.
+- Preflight distinct outputs and refuse source, dotenv and symlink destinations.
+- Publish new reports without clobbering competing files; retain explicit regular-report overwrite.
+- Avoid spurious dynamic JavaScript/PHP findings for whitespace before literal keys.
+
 ## 1.1.1 - 2026-10-15
 
 - Correct current README release status and wheel-install links after the Python alias detection release.
