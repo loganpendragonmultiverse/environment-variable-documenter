@@ -4,14 +4,14 @@ Environment Variable Documenter is a read-only command-line tool that finds envi
 
 It inventories names and source locations. It deliberately does **not** read real `.env` values.
 
-**Release status:** 1.1.1, with syntax-tree detection of direct Python environment aliases.
+**Release status:** 1.1.2, with syntax-tree detection of direct Python environment aliases.
 
 ## Three-minute start
 
-Download and install the wheel from the [v1.1.1 release](https://github.com/loganpendragonmultiverse/environment-variable-documenter/releases/tag/v1.1.1):
+Download and install the wheel from the [v1.1.2 release](https://github.com/loganpendragonmultiverse/environment-variable-documenter/releases/tag/v1.1.2):
 
 ```console
-python -m pip install "environment-variable-documenter @ https://github.com/loganpendragonmultiverse/environment-variable-documenter/releases/download/v1.1.1/environment_variable_documenter-1.1.1-py3-none-any.whl"
+python -m pip install "environment-variable-documenter @ https://github.com/loganpendragonmultiverse/environment-variable-documenter/releases/download/v1.1.2/environment_variable_documenter-1.1.2-py3-none-any.whl"
 env-documenter . --markdown environment-variables.md --example .env.example --json environment-variables.json
 ```
 
@@ -110,3 +110,23 @@ matches. Use an interpreter that supports the scanned source's syntax.
 
 Real dotenv files and excluded directories remain filtered **before** source
 reads. Template assignment values remain excluded from the report model.
+
+## Destination and read boundaries
+
+Symlink roots are rejected and symlink scan entries are skipped before reading,
+including templates linked to real dotenv files. Reads are bounded while reading,
+so growth after a size check cannot remove the 1 MB limit.
+
+Output paths must differ and cannot be symlinks, source-code files or real dotenv
+files. All destinations are preflighted before writing. Without `--overwrite`,
+publication uses an atomic no-clobber link; an existing or competing regular file
+stays untouched. Explicit overwrite replaces regular reports only. Each file is
+published atomically, but multiple outputs are not a filesystem transaction;
+mid-write operating-system failures can leave earlier complete outputs in place.
+Use stable trusted input/output paths; hostile concurrent filesystem mutation is
+outside scope. On filesystems without hard-link support, no-clobber output fails
+safely with exit 2.
+
+The source distribution includes runnable `examples/sample.py`, `.js`, `.php`,
+`.sh` and a blank `examples/.env.example`. From the extracted source tree, run
+`env-documenter examples` to see three documented names without including values.

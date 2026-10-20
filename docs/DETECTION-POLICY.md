@@ -10,7 +10,7 @@ Dynamic accesses are separate findings because the name cannot be proven statica
 
 ## Value exclusion
 
-Files matching real dotenv conventions are skipped before `read_text`. In templates, only a valid uppercase assignment name before `=` is retained. The right-hand side never enters the report model.
+Files matching real dotenv conventions are skipped before content reads. In templates, only a valid uppercase assignment name before `=` is retained. The right-hand side never enters the report model.
 
 ## Extending detection
 
@@ -52,3 +52,5 @@ occurrences from an unparsed file are discarded and other files still scan. Use 
 
 Real dotenv files and excluded directories remain filtered **before** source
 reads. Template assignment values remain excluded from the report model.
+
+Symlink entries are skipped before content reads, and a symlink root is refused. Source read limits are enforced on bounded byte reads.

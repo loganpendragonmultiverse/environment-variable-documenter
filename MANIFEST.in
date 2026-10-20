@@ -3,3 +3,5 @@ recursive-include docs *.md
 recursive-include examples *.py *.js *.php *.sh
 recursive-include tests *.py
 
+
+include examples/.env.example

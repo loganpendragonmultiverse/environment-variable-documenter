@@ -77,12 +77,12 @@ DYNAMIC_PATTERNS: dict[str, list[tuple[str, re.Pattern[str]]]] = {
     "javascript": [
         (
             "dynamic JavaScript mapping access",
-            re.compile(r"\bprocess\.env\s*\[\s*(?!['\"])"),
+            re.compile(r"\bprocess\.env\s*\[\s*(?!\s*['\"])"),
         )
     ],
     "php": [
-        ("dynamic PHP env access", re.compile(r"\benv\s*\(\s*(?!['\"])")),
-        ("dynamic PHP getenv access", re.compile(r"\bgetenv\s*\(\s*(?!['\"])")),
+        ("dynamic PHP env access", re.compile(r"\benv\s*\(\s*(?!\s*['\"])")),
+        ("dynamic PHP getenv access", re.compile(r"\bgetenv\s*\(\s*(?!\s*['\"])")),
     ],
 }
 
@@ -90,7 +90,10 @@ DOTENV_LINE = re.compile(r"^\s*(?:export\s+)?([A-Z][A-Z0-9_]*)\s*=")
 
 
 def scan(root: Path, extra_excludes: Iterable[str] = ()) -> ScanReport:
-    scan_root = root.expanduser().resolve()
+    selected = root.expanduser().absolute()
+    if any(path.is_symlink() for path in (selected, *selected.parents)):
+        raise ValueError("Scan root cannot contain symlink components")
+    scan_root = selected.resolve()
     if not scan_root.is_dir():
         raise ValueError(f"Scan root is not a directory: {scan_root}")
     exclusions = EXCLUDED_DIRECTORIES | frozenset(extra_excludes)
@@ -100,6 +103,9 @@ def scan(root: Path, extra_excludes: Iterable[str] = ()) -> ScanReport:
     files_skipped = 0
 
     for path in sorted(scan_root.rglob("*")):
+        if path.is_symlink():
+            files_skipped += 1
+            continue
         if not path.is_file():
             continue
         relative = path.relative_to(scan_root)
@@ -113,11 +119,13 @@ def scan(root: Path, extra_excludes: Iterable[str] = ()) -> ScanReport:
         language = _language(path)
         if not template and language is None:
             continue
-        if path.stat().st_size > MAX_FILE_BYTES:
-            files_skipped += 1
-            continue
         try:
-            text = path.read_text(encoding="utf-8")
+            with path.open("rb") as handle:
+                content = handle.read(MAX_FILE_BYTES + 1)
+            if len(content) > MAX_FILE_BYTES:
+                files_skipped += 1
+                continue
+            text = content.decode("utf-8")
         except (OSError, UnicodeError):
             files_skipped += 1
             continue
